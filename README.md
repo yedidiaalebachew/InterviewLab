@@ -2,7 +2,7 @@
 
 InterviewLab is a responsive behavioral-interview coaching application. Users record an answer, receive a timestamped transcript and transparent rubric scores, inspect feedback linked to exact transcript segments, retry the question, and compare attempts.
 
-The application runs immediately in a credential-free local demo mode. Add OpenAI and Supabase credentials to activate provider transcription and the included production data model.
+The application runs immediately in a credential-free local demo mode. Add transcription-provider and Supabase credentials to activate provider transcription and the included production data model.
 
 ## Core guarantees
 
@@ -19,7 +19,7 @@ The application runs immediately in a credential-free local demo mode. Add OpenA
 - Next.js App Router, React, TypeScript, Tailwind CSS
 - Browser `MediaRecorder` API
 - Zod structured-output validation
-- OpenAI timestamped transcription when configured
+- Timestamped transcription via OpenAI or Deepgram (selectable, both optional)
 - Supabase PostgreSQL, Auth, and private Storage production schema
 - Vitest for unit testing, with a local `npm run validate` script for full checks
 - Vercel-compatible deployment
@@ -53,12 +53,16 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+TRANSCRIPTION_PROVIDER=openai
 OPENAI_API_KEY=
+DEEPGRAM_API_KEY=
 TRANSCRIPTION_MODEL=whisper-1
 EVALUATION_MODEL=
 ```
 
-Never expose `SUPABASE_SERVICE_ROLE_KEY` or `OPENAI_API_KEY` to client components.
+`TRANSCRIPTION_PROVIDER` selects `openai` (default, uses `OPENAI_API_KEY` and `TRANSCRIPTION_MODEL`, e.g. `whisper-1`) or `deepgram` (uses `DEEPGRAM_API_KEY` and `TRANSCRIPTION_MODEL`, e.g. `nova-2`). Only the selected provider's key is required.
+
+Never expose `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, or `DEEPGRAM_API_KEY` to client components.
 
 ## Supabase setup
 
@@ -84,7 +88,7 @@ Browser recording
   -> results and comparison UI
 ```
 
-`POST /api/transcribe` validates the file and uses OpenAI when `OPENAI_API_KEY` is present. `POST /api/evaluate` uses strict JSON-schema model output when the key is configured and the validated local evaluator otherwise. `POST /api/attempts` stores authenticated production attempts and private audio through the atomic Supabase RPC in the second migration; `GET /api/attempts` restores RLS-filtered history and creates short-lived audio URLs only for requested results.
+`POST /api/transcribe` validates the file and uses OpenAI or Deepgram (per `TRANSCRIPTION_PROVIDER`) when configured. `POST /api/evaluate` uses strict JSON-schema model output when the key is configured and the validated local evaluator otherwise. `POST /api/attempts` stores authenticated production attempts and private audio through the atomic Supabase RPC in the second migration; `GET /api/attempts` restores RLS-filtered history and creates short-lived audio URLs only for requested results.
 
 ## Evaluation methodology
 
