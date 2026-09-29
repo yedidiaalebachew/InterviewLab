@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SiteHeader } from "@/components/site-header";
@@ -7,13 +5,11 @@ import { SiteFooter } from "@/components/site-footer";
 import { ToastProvider } from "@/components/toast-provider";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { themeInitScript } from "@/components/theme-toggle";
+import { readAppCss } from "@/lib/app-css";
 import "./globals.css";
 
-// Embedded so the layout still paints if the dev stylesheet URL fails
-// (Turbopack chunk names contain brackets that some proxies drop).
-const inlineCss = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8")
-  .replace(/^@import\s+["']tailwindcss["'];?\s*/m, "")
-  .replace(/<\/style/gi, "<\\/style");
+// Embedded so the layout still paints if every stylesheet request fails.
+const inlineCss = readAppCss();
 
 // Dev registrations intercept /_next assets and can answer stylesheets with HTML.
 const serviceWorkerCleanupScript = `
@@ -69,7 +65,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* Inlined so layout styles still apply if the dev CSS chunk URL fails to load. */}
+        <link rel="stylesheet" href="/api/styles" precedence="high" />
+        {/* Inlined so the layout still paints if the stylesheet request fails. */}
         <style dangerouslySetInnerHTML={{ __html: inlineCss }} />
         {/* Applies the persisted or system color theme before paint to avoid a flash. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

@@ -4,6 +4,14 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/*": ["./src/app/globals.css"],
   },
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
