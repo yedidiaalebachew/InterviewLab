@@ -5,7 +5,28 @@ import { SiteFooter } from "@/components/site-footer";
 import { ToastProvider } from "@/components/toast-provider";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { themeInitScript } from "@/components/theme-toggle";
+import { readAppCss } from "@/lib/app-css";
 import "./globals.css";
+
+// Embedded so the layout still paints if every stylesheet request fails.
+const inlineCss = readAppCss();
+
+// Dev registrations intercept /_next assets and can answer stylesheets with HTML.
+const serviceWorkerCleanupScript = `
+(function () {
+  if (!('serviceWorker' in navigator)) return;
+  var host = location.hostname;
+  if (host !== 'localhost' && host !== '127.0.0.1') return;
+  navigator.serviceWorker.getRegistrations().then(function (regs) {
+    if (!regs.length) return;
+    Promise.all(regs.map(function (reg) { return reg.unregister(); })).then(function () {
+      if (sessionStorage.getItem('interviewlab:sw-cleared')) return;
+      sessionStorage.setItem('interviewlab:sw-cleared', '1');
+      location.reload();
+    });
+  });
+})();
+`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,14 +61,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        {/* Applies the persisted or system color theme before paint to avoid a flash. */}
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      </head>
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <link rel="stylesheet" href="/styles.css" precedence="high" />
+        <link rel="stylesheet" href="/api/styles" precedence="high" />
+        {/* Inlined so the layout still paints if the stylesheet request fails. */}
+        <style dangerouslySetInnerHTML={{ __html: inlineCss }} />
+        {/* Applies the persisted or system color theme before paint to avoid a flash. */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: serviceWorkerCleanupScript }} />
         <a href="#main-content" className="skip-link">Skip to content</a>
         <ToastProvider>
           <SiteHeader />
