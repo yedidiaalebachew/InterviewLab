@@ -65,6 +65,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <link rel="stylesheet" href="/styles.css" precedence="high" />
         <link rel="stylesheet" href="/api/styles" precedence="high" />
         {/* Inlined so the layout still paints if the stylesheet request fails. */}
         <style dangerouslySetInnerHTML={{ __html: inlineCss }} />
